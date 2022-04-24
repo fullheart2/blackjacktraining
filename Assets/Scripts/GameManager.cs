@@ -11,6 +11,8 @@ public class GameManager : MonoBehaviour
     public Button dealBtn;
     public Button hitBtn;
     public Button standBtn;
+    public Button doubleBtn;
+    public Button splitBtn;
     public Button betBtn;
 
     private int standClicks = 0;
