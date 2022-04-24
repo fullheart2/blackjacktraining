@@ -13,6 +13,7 @@ public class GameManager : MonoBehaviour
     public Button standBtn;
     public Button doubleBtn;
     public Button splitBtn;
+	public Button insuranceBtn;
     public Button betBtn;
 
     private int standClicks = 0;
