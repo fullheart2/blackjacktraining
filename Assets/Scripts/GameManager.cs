@@ -85,9 +85,8 @@ public class GameManager : MonoBehaviour
     private void StandClicked()
     {
         standClicks++;
-        if (standClicks > 1) RoundOver();
+        if (standClicks >= 1) RoundOver();
         HitDealer();
-        standBtnText.text = "Call";
     }
 
     private void HitDealer()
