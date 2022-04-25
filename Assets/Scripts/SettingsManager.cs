@@ -35,7 +35,7 @@ public class SettingsManager : MonoBehaviour
     private void StartGame()
     {
         SetSettings();
-        SceneManager.LoadScene("Game", LoadSceneMode.Additive);
+        SceneManager.LoadScene("Game");
     }
     public static int[] GetSettings() 
     {

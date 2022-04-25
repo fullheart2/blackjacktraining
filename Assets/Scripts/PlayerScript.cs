@@ -13,8 +13,6 @@ public class PlayerScript : MonoBehaviour
     // Total value of player/dealer's hand
     public int handValue = 0;
 
-    // Betting money
-    private int money = 1000;
 
     // Array of card objects on table
     public GameObject[] hand;
@@ -67,18 +65,6 @@ public class PlayerScript : MonoBehaviour
                 handValue -= 10;
             }
         }
-    }
-
-    // Add or subtract from money, for bets
-    public void AdjustMoney(int amount)
-    {
-        money += amount;
-    }
-
-    // Output players current money amount
-    public int GetMoney()
-    {
-        return money;
     }
 
     // Hides all cards, resets the needed variables

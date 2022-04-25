@@ -83,12 +83,12 @@ public class GameManager : MonoBehaviour
         hideCard.GetComponent<Renderer>().enabled = true;
         // Adjust buttons visibility
         dealBtn.gameObject.SetActive(false);
+		betBtn.gameObject.SetActive(false);
         hitBtn.gameObject.SetActive(true);
         standBtn.gameObject.SetActive(true);
         doubleBtn.gameObject.SetActive(true);
         splitBtn.gameObject.SetActive(true);
         insuranceBtn.gameObject.SetActive(true);
-        standBtnText.text = "Stand";
 
     }
 
@@ -140,7 +140,7 @@ public class GameManager : MonoBehaviour
 
     private void HitDealer()
     {
-        while (dealerScript.handValue < 16 && dealerScript.cardIndex < 10)
+        while (dealerScript.handValue < 18)
         {
             dealerScript.GetCard();
             dealerScoreText.text = "Hand: " + dealerScript.handValue.ToString();
@@ -158,7 +158,7 @@ public class GameManager : MonoBehaviour
         bool dealer21 = dealerScript.handValue == 21;
         bool roundOver = true;
         // if player busts, dealer wins
-        if (playerBust)
+        if (playerBust || (dealerScript.handValue > playerScript.handValue && !dealerBust))
         {
             mainText.text = "Dealer wins!";
         }
@@ -176,7 +176,12 @@ public class GameManager : MonoBehaviour
         }
         else
         {
-            roundOver = false;
+			//error occured
+			Debug.Log(dealerBust);
+			Debug.Log(playerBust);
+			Debug.Log(playerScript.handValue);
+			Debug.Log(dealerScript.handValue);
+			System.Environment.Exit(1);
         }
         // Set ui up for next move / hand / turn
         if (roundOver)
@@ -187,9 +192,12 @@ public class GameManager : MonoBehaviour
             splitBtn.gameObject.SetActive(false);
             insuranceBtn.gameObject.SetActive(false);
             dealBtn.gameObject.SetActive(true);
+			betBtn.gameObject.SetActive(true);
             mainText.gameObject.SetActive(true);
             dealerScoreText.gameObject.SetActive(true);
             hideCard.GetComponent<Renderer>().enabled = false;
+			pot = 0;
+			potText.text = "Pot: $" + pot.ToString();
             cashText.text = "$" + money.ToString();
         }
     }
