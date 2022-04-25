@@ -52,7 +52,7 @@ public class PlayerScript : MonoBehaviour
     // Search for needed ace conversions, 1 to 11 or vice versa
     public void AceCheck()
     {
-        // for each ace in the lsit check
+        // for each ace in the list check
         foreach (CardScript ace in aceList)
         {
             if(handValue + 10 < 22 && ace.GetValueOfCard() == 1)
