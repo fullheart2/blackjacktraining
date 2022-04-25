@@ -15,7 +15,9 @@ public class PlayerScript : MonoBehaviour
 
 
     // Array of card objects on table
-    public GameObject[] hand;
+    private GameObject[] hand = new GameObject[10];
+    public GameObject startCard;
+
     // Index of next card to be turned over
     public int cardIndex = 0;
     // Tracking aces for 1 to 11 conversions
@@ -31,7 +33,20 @@ public class PlayerScript : MonoBehaviour
     public int GetCard()
     {
         // Get a card, use deal card to assign sprite and value to card on table
-        int cardValue = deckScript.DealCard(hand[cardIndex].GetComponent<CardScript>());
+        // GameObject temp = Instantiate(startCard, new Vector3(cardIndex * 20f, cardIndex * 20f, 0), Quaternion.identity);
+        int cardValue;
+        if (cardIndex == 0)
+        {
+            cardValue = deckScript.DealCard(startCard.GetComponent<CardScript>());
+            hand[0] = startCard;
+        }
+        else
+        {
+            GameObject temp = Instantiate(startCard);
+            temp.transform.Translate(new Vector3(cardIndex * 0.1f, cardIndex * 0.1f, 0));
+            hand[cardIndex] = temp;
+            cardValue = deckScript.DealCard(hand[cardIndex].GetComponent<CardScript>());
+        }
         // Show card on game screen
         hand[cardIndex].GetComponent<Renderer>().enabled = true;
         // Add card value to running total of the hand
@@ -72,8 +87,11 @@ public class PlayerScript : MonoBehaviour
     {
         for(int i = 0; i < hand.Length; i++)
         {
-            hand[i].GetComponent<CardScript>().ResetCard();
-            hand[i].GetComponent<Renderer>().enabled = false;
+            if (hand[i] != null) 
+            {
+                hand[i].GetComponent<CardScript>().ResetCard();
+                hand[i].GetComponent<Renderer>().enabled = false;
+            }
         }
         cardIndex = 0;
         handValue = 0;
