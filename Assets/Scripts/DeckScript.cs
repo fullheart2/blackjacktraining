@@ -6,19 +6,20 @@ using UnityEngine;
 public class DeckScript : MonoBehaviour
 {
     public Sprite[] cardSprites;
-    int[] cardValues = new int[53];
+    int[] cardMapping;
+    int[] cardValues;
     int currentIndex = 0;
 
     void Start()
     {
-        GetCardValues();
+        // GetCardValues();
     }
 
-    void GetCardValues()
+    public void GetCardValues()
     {
         int num = 0;
         // Loop to assign values to the cards
-        for (int i = 0; i < cardSprites.Length; i++)
+        for (int i = 0; i < cardValues.Length; i++)
         {
             num = i;
             // Count up to the amout of cards, 52
@@ -30,20 +31,21 @@ public class DeckScript : MonoBehaviour
                 num = 10;
             }
             cardValues[i] = num++;
+            cardMapping[i] = i;
         }
     }
 
     public void Shuffle()
     {
         // Standard array data swapping technique
-        for(int i = cardSprites.Length -1; i > 0; --i)
+        for(int i = cardMapping.Length -1; i > 0; i--)
         {
-            int j = Mathf.FloorToInt(Random.Range(0.0f, 1.0f) * cardSprites.Length - 1) + 1;
-            Sprite face = cardSprites[i];
-            cardSprites[i] = cardSprites[j];
-            cardSprites[j] = face;
+            int j = Mathf.FloorToInt(Random.Range(0.0f, 1.0f) * (cardMapping.Length - 1)) + 1;
+            int value = cardMapping[i];
+            cardMapping[i] = cardMapping[j];
+            cardMapping[j] = value;
 
-            int value = cardValues[i];
+            value = cardValues[i];
             cardValues[i] = cardValues[j];
             cardValues[j] = value;
         }
@@ -52,7 +54,7 @@ public class DeckScript : MonoBehaviour
 
     public int DealCard(CardScript cardScript)
     {
-        cardScript.SetSprite(cardSprites[currentIndex]);
+        cardScript.SetSprite(cardSprites[(cardMapping[currentIndex]-1)%52+1], currentIndex);
         cardScript.SetValue(cardValues[currentIndex]);
         currentIndex++;
         return cardScript.GetValueOfCard();
@@ -61,5 +63,10 @@ public class DeckScript : MonoBehaviour
     public Sprite GetCardBack()
     {
         return cardSprites[0];
+    }
+    public void SetDecks(int decks) 
+    {
+        cardValues = new int[1 + 52 * decks];
+        cardMapping = new int[1 + 52 * decks];
     }
 }

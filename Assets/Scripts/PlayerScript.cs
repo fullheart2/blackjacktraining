@@ -12,11 +12,12 @@ public class PlayerScript : MonoBehaviour
 
     // Total value of player/dealer's hand
     public int handValue = 0;
-
+    public bool softCount = false;
 
     // Array of card objects on table
     private GameObject[] hand = new GameObject[10];
     public GameObject startCard;
+    public int dir;
 
     // Index of next card to be turned over
     public int cardIndex = 0;
@@ -43,7 +44,7 @@ public class PlayerScript : MonoBehaviour
         else
         {
             GameObject temp = Instantiate(startCard);
-            temp.transform.Translate(new Vector3(cardIndex * 0.1f, cardIndex * 0.1f, 0));
+            temp.transform.Translate(new Vector3(cardIndex * 0.5f, cardIndex * dir * 0.5f-1.05f, 0));
             hand[cardIndex] = temp;
             cardValue = deckScript.DealCard(hand[cardIndex].GetComponent<CardScript>());
         }
@@ -73,11 +74,13 @@ public class PlayerScript : MonoBehaviour
                 // if converting, adjust card object value and hand
                 ace.SetValue(11);
                 handValue += 10;
+                softCount = true;
             } else if (handValue > 21 && ace.GetValueOfCard() == 11)
             {
                 // if converting, adjust gameobject value and hand value
                 ace.SetValue(1);
                 handValue -= 10;
+                softCount = false;
             }
         }
     }

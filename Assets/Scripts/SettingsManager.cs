@@ -9,7 +9,7 @@ using UnityEngine.UI;
 public class SettingsManager : MonoBehaviour
 {
     // static settings
-    public static int[] settings = new int[4];
+    public static int[] settings = new int[5];
 
     // UI elements
     public Button startBtn;
@@ -17,6 +17,7 @@ public class SettingsManager : MonoBehaviour
     public Dropdown decks;
     public Dropdown players;
     public Toggle deviations;
+    public Toggle hit17;
 
 
 
@@ -49,6 +50,7 @@ public class SettingsManager : MonoBehaviour
         settings[2] = 1;
         // settings[2] = players.value + 1;
         if (!deviations.isOn) settings[3] = 0; else settings[3] = 1;
+        if (!hit17.isOn) settings[4] = 0; else settings[4] = 1;
     }
         
 }

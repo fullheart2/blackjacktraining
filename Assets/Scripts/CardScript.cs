@@ -23,9 +23,10 @@ public class CardScript : MonoBehaviour
         return GetComponent<SpriteRenderer>().sprite.name;
     }
 
-    public void SetSprite(Sprite newSprite)
+    public void SetSprite(Sprite newSprite, int layer)
     {
         gameObject.GetComponent<SpriteRenderer>().sprite = newSprite;
+        gameObject.GetComponent<SpriteRenderer>().sortingOrder = layer;
     }
 
     public void ResetCard()

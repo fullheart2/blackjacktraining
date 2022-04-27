@@ -41,6 +41,7 @@ public class GameManager : MonoBehaviour
     private int decks;
     private int players;
     private bool deviations;
+    private bool hit17;
 
     void Start()
     {
@@ -57,11 +58,15 @@ public class GameManager : MonoBehaviour
         decks = settings[1];
         players = settings[2];
         if (settings[3] == 0) deviations = false; else deviations = true;
+        if (settings[3] == 0) hit17 = false; else hit17 = true;
         hitBtn.gameObject.SetActive(false);
         standBtn.gameObject.SetActive(false);
         doubleBtn.gameObject.SetActive(false);
         splitBtn.gameObject.SetActive(false);
         insuranceBtn.gameObject.SetActive(false);
+        hideCard.GetComponent<Renderer>().sortingOrder = 999;
+        playerScript.deckScript.SetDecks(decks);
+        playerScript.deckScript.GetCardValues();
     }
 
     private void DealClicked()
@@ -89,7 +94,10 @@ public class GameManager : MonoBehaviour
         doubleBtn.gameObject.SetActive(true);
         splitBtn.gameObject.SetActive(true);
         insuranceBtn.gameObject.SetActive(true);
-
+        if (dealerScript.handValue == 21) 
+        {
+            RoundOver();
+        }
     }
 
     private void PlayerAction(int choice) 
@@ -128,7 +136,7 @@ public class GameManager : MonoBehaviour
         {
             playerScript.GetCard();
             scoreText.text = "Hand: " + playerScript.handValue.ToString();
-            if (playerScript.handValue > 20) RoundOver();
+            if (playerScript.handValue > 20) HitDealer();
         }
     }
 
@@ -140,7 +148,7 @@ public class GameManager : MonoBehaviour
 
     private void HitDealer()
     {
-        while (dealerScript.handValue < 18)
+        while (dealerScript.handValue < 17 || (dealerScript.handValue == 17 && dealerScript.softCount && hit17))
         {
             dealerScript.GetCard();
             dealerScoreText.text = "Hand: " + dealerScript.handValue.ToString();
