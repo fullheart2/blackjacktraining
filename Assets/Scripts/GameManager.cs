@@ -19,13 +19,15 @@ public class GameManager : MonoBehaviour
     private int standClicks = 0;
 
     // Access the player and dealer's script
-    public PlayerScript playerScript;
-    public PlayerScript dealerScript;
+    public PlayerScript playerScript; //OG playerscript, grabbed from game
+    public PlayerScript dealerScript; //same as above but for the dealer
+	
+	//Active player list
+	public PlayerHelper playerList;
 
     // public Text to access and update - hud
     public Text scoreText;
     public Text dealerScoreText;
-    public Text potText;
     public Text cashText;
     public Text mainText;
     public Text standBtnText;
@@ -33,8 +35,8 @@ public class GameManager : MonoBehaviour
     // Card hiding dealer's 2nd card
     public GameObject hideCard;
 
-    private int money = 0;
-    int pot = 0;
+    private int bank = 0;
+	int round_base_bet = 0;
 
     private int[] settings;
     private bool countMode;
@@ -67,6 +69,7 @@ public class GameManager : MonoBehaviour
         hideCard.GetComponent<Renderer>().sortingOrder = 999;
         playerScript.deckScript.SetDecks(decks);
         playerScript.deckScript.GetCardValues();
+		playerList = new PlayerHelper(playerScript);
     }
 
     private void DealClicked()
@@ -94,6 +97,10 @@ public class GameManager : MonoBehaviour
         doubleBtn.gameObject.SetActive(true);
         splitBtn.gameObject.SetActive(true);
         insuranceBtn.gameObject.SetActive(true);
+		
+		//sam added this line
+		playerScript.bet = round_base_bet;
+		
         if (dealerScript.handValue == 21) 
         {
             RoundOver();
@@ -113,10 +120,9 @@ public class GameManager : MonoBehaviour
                 StandClicked();
                 break;
             case 2: // Double
-                money -= (pot / 2);
-                cashText.text = "Money: $" + money.ToString();
-                pot *= 2;
-                potText.text = "Pot: $" + pot.ToString();
+                bank -= round_base_bet;
+                cashText.text = "Bank: $" + bank.ToString(); 
+                playerScript.bet = playerScript.bet *2;
                 HitClicked();
                 StandClicked();
                 break;
@@ -131,13 +137,9 @@ public class GameManager : MonoBehaviour
 
     private void HitClicked()
     {
-        // Check that there is still room on the table
-        if (playerScript.cardIndex <= 10)
-        {
-            playerScript.GetCard();
-            scoreText.text = "Hand: " + playerScript.handValue.ToString();
-            if (playerScript.handValue > 20) HitDealer();
-        }
+        playerScript.GetCard();
+        scoreText.text = "Hand: " + playerScript.handValue.ToString();
+        if (playerScript.handValue > 20) HitDealer();
     }
 
     private void StandClicked()
@@ -145,6 +147,11 @@ public class GameManager : MonoBehaviour
         // Next player acts
         HitDealer();
     }
+	
+	private void SplitClicked()
+	{
+		
+	}
 
     private void HitDealer()
     {
@@ -174,13 +181,13 @@ public class GameManager : MonoBehaviour
         else if (dealerBust || playerScript.handValue > dealerScript.handValue)
         {
             mainText.text = "You win!";
-            money += pot;
+            bank += playerScript.bet*2;
         }
         //Check for tie, return bets
         else if (playerScript.handValue == dealerScript.handValue)
         {
             mainText.text = "Push: Bets returned";
-            money += (pot / 2);
+            bank += playerScript.bet;
         }
         else
         {
@@ -204,21 +211,20 @@ public class GameManager : MonoBehaviour
             mainText.gameObject.SetActive(true);
             dealerScoreText.gameObject.SetActive(true);
             hideCard.GetComponent<Renderer>().enabled = false;
-			pot = 0;
-			potText.text = "Pot: $" + pot.ToString();
-            cashText.text = "$" + money.ToString();
+			round_base_bet = 0;
+			playerScript.bet = 0;
+            cashText.text = "Bank: $" + bank.ToString();
         }
     }
 
-    // Add money to pot if bet clicked
+    // Add bank to pot if bet clicked
     void BetClicked()
     {
         Text newBet = betBtn.GetComponentInChildren(typeof(Text)) as Text;
         int intBet = int.Parse(newBet.text.ToString().Remove(0, 1));
-        money -= intBet;
-        cashText.text = "$" + money.ToString();
-        pot += (intBet * 2);
-        potText.text = "Pot: $" + pot.ToString();
+        bank -= intBet;
+		round_base_bet += intBet;
+        cashText.text = "Bank: $" + bank.ToString();
     }
 
     private int GetCorrectMove() 
@@ -236,4 +242,35 @@ public class GameManager : MonoBehaviour
             Debug.Log("Strategy Mistake: You chose: " + choices[choice] + ", but the correct move was: " + choices[correct]); // NEEDS TO CHANGE, OK FOR NOW
         }
     }
+	
+	public class PlayerHelper
+	{
+		public PlayerHelper previous;
+		public PlayerScript data;
+		public PlayerHelper next;
+		public PlayerHelper(PlayerScript data){
+			this.previous = null;
+			this.data = data;
+		}
+		public PlayerHelper(PlayerScript data, PlayerHelper prev){
+			this.previous = prev;
+			this.data = data;
+		}
+		
+		public void addPlayer(PlayerScript player){
+			this.next = new PlayerHelper(player, this);
+		}
+		
+		public PlayerHelper getNext(){
+			return this.next;
+		}
+		
+		public PlayerHelper getPrev(){
+			return this.previous;
+		}
+		
+		public PlayerScript getData(){
+			return this.data;
+		}
+	}
 }

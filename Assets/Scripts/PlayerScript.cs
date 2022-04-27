@@ -13,7 +13,8 @@ public class PlayerScript : MonoBehaviour
     // Total value of player/dealer's hand
     public int handValue = 0;
     public bool softCount = false;
-
+	public int bet = 0;
+	
     // Array of card objects on table
     private GameObject[] hand = new GameObject[10];
     public GameObject startCard;
