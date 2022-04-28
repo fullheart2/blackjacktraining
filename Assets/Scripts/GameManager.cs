@@ -16,8 +16,6 @@ public class GameManager : MonoBehaviour
 	public Button insuranceBtn;
     public Button betBtn;
 
-    private int standClicks = 0;
-
     // Access the player and dealer's script
     public PlayerScript playerScript; //OG playerscript, grabbed from game
     public PlayerScript dealerScript; //same as above but for the dealer
@@ -29,8 +27,10 @@ public class GameManager : MonoBehaviour
     public Text scoreText;
     public Text dealerScoreText;
     public Text cashText;
+	public Text betText;
     public Text mainText;
     public Text standBtnText;
+	
 
     // Card hiding dealer's 2nd card
     public GameObject hideCard;
@@ -75,17 +75,17 @@ public class GameManager : MonoBehaviour
     private void DealClicked()
     {
         // Reset round, hide text, prep for new hand
-        playerScript.ResetHand();
+        playerList.data.ResetHand();
         dealerScript.ResetHand();
         // Hide deal hand score at start of deal
         dealerScoreText.gameObject.SetActive(false);
         mainText.gameObject.SetActive(false);
         dealerScoreText.gameObject.SetActive(false);
         GameObject.Find("Deck").GetComponent<DeckScript>().Shuffle();
-        playerScript.StartHand();
+        playerList.data.StartHand();
         dealerScript.StartHand();
         // Update the scores displayed
-        scoreText.text = "Hand: " + playerScript.handValue.ToString();
+        scoreText.text = "Hand: " + playerList.data.handValue.ToString();
         dealerScoreText.text = "Hand: " + dealerScript.handValue.ToString();
         // Place card back on dealer card, hide card
         hideCard.GetComponent<Renderer>().enabled = true;
@@ -99,7 +99,7 @@ public class GameManager : MonoBehaviour
         insuranceBtn.gameObject.SetActive(true);
 		
 		//sam added this line
-		playerScript.bet = round_base_bet;
+		playerList.data.bet = round_base_bet;
 		
         if (dealerScript.handValue == 21) 
         {
@@ -120,14 +120,12 @@ public class GameManager : MonoBehaviour
                 StandClicked();
                 break;
             case 2: // Double
-                bank -= round_base_bet;
-                cashText.text = "Bank: $" + bank.ToString(); 
-                playerScript.bet = playerScript.bet *2;
+                playerList.data.bet = playerList.data.bet *2;
                 HitClicked();
                 StandClicked();
                 break;
             case 3: // Split
-
+				SplitClicked();
                 break;
             case 4: // Insurance
 
@@ -137,20 +135,28 @@ public class GameManager : MonoBehaviour
 
     private void HitClicked()
     {
-        playerScript.GetCard();
-        scoreText.text = "Hand: " + playerScript.handValue.ToString();
-        if (playerScript.handValue > 20) HitDealer();
+        playerList.data.GetCard();
+        scoreText.text = "Hand: " + playerList.data.handValue.ToString();
+        if (playerList.data.handValue > 20) StandClicked();
     }
 
     private void StandClicked()
     {
         // Next player acts
-        HitDealer();
+		if(playerList.next == null){
+			HitDealer();
+		}
+		else{
+			playerList = playerList.next;
+		}
     }
 	
-	private void SplitClicked()
+	private void SplitClicked()//need to add checking if number of cards in hand is two and if cards are the same
 	{
-		
+		/*PlayerScript temp = new PlayerScript();
+		temp.bet = round_base_bet;
+		temp.offset = playerList.data.offset +1;
+		playerList.addPlayer(temp);*/
 	}
 
     private void HitDealer()
@@ -166,38 +172,52 @@ public class GameManager : MonoBehaviour
     // Check for winnner and loser, hand is over
     void RoundOver()
     {
-        // Booleans (true/false) for bust and blackjack/21
-        bool playerBust = playerScript.handValue > 21;
-        bool dealerBust = dealerScript.handValue > 21;
-        bool player21 = playerScript.handValue == 21;
-        bool dealer21 = dealerScript.handValue == 21;
-        bool roundOver = true;
-        // if player busts, dealer wins
-        if (playerBust || (dealerScript.handValue > playerScript.handValue && !dealerBust))
-        {
-            mainText.text = "Dealer wins!";
-        }
-        // if dealer busts, player didnt, or player has more points, player wins
-        else if (dealerBust || playerScript.handValue > dealerScript.handValue)
-        {
-            mainText.text = "You win!";
-            bank += playerScript.bet*2;
-        }
-        //Check for tie, return bets
-        else if (playerScript.handValue == dealerScript.handValue)
-        {
-            mainText.text = "Push: Bets returned";
-            bank += playerScript.bet;
-        }
-        else
-        {
-			//error occured
-			Debug.Log(dealerBust);
-			Debug.Log(playerBust);
-			Debug.Log(playerScript.handValue);
-			Debug.Log(dealerScript.handValue);
-			System.Environment.Exit(1);
-        }
+		bool roundOver = true;
+		// Booleans (true/false) for bust and blackjack/21
+		bool dealerBust = dealerScript.handValue > 21;
+		bool dealer21 = dealerScript.handValue == 21;
+		
+		
+		while(true){
+			// Booleans (true/false) for bust and blackjack/21
+			bool playerBust = playerList.data.handValue > 21;
+			bool player21 = playerList.data.handValue == 21;
+			// if player busts, dealer wins
+			if (playerBust || (dealerScript.handValue > playerList.data.handValue && !dealerBust))
+			{
+				mainText.text = "Dealer wins!";
+				bank -= playerList.data.bet;
+			}
+			// if dealer busts, player didnt, or player has more points, player wins
+			else if (dealerBust || playerList.data.handValue > dealerScript.handValue)
+			{
+				mainText.text = "You win!";
+				bank += playerList.data.bet;
+			}
+			//Check for tie, return bets
+			else if (playerList.data.handValue == dealerScript.handValue)
+			{
+				mainText.text = "Push: Bets returned";
+			}
+			else
+			{
+				//error occured
+				Debug.Log(dealerBust);
+				Debug.Log(playerBust);
+				Debug.Log(playerList.data.handValue);
+				Debug.Log(dealerScript.handValue);
+				System.Environment.Exit(1);
+			}
+			if(playerList.previous == null){
+				break;
+			}
+			else{
+				playerList = playerList.previous;
+				playerList.next = null;
+			}
+		}
+
+		
         // Set ui up for next move / hand / turn
         if (roundOver)
         {
@@ -212,8 +232,10 @@ public class GameManager : MonoBehaviour
             dealerScoreText.gameObject.SetActive(true);
             hideCard.GetComponent<Renderer>().enabled = false;
 			round_base_bet = 0;
-			playerScript.bet = 0;
+			betText.text = "Base Bet: $" + round_base_bet.ToString();
             cashText.text = "Bank: $" + bank.ToString();
+			
+			playerList.data.bet = 0;
         }
     }
 
@@ -222,9 +244,8 @@ public class GameManager : MonoBehaviour
     {
         Text newBet = betBtn.GetComponentInChildren(typeof(Text)) as Text;
         int intBet = int.Parse(newBet.text.ToString().Remove(0, 1));
-        bank -= intBet;
 		round_base_bet += intBet;
-        cashText.text = "Bank: $" + bank.ToString();
+		betText.text = "Base Bet: $" + round_base_bet.ToString();
     }
 
     private int GetCorrectMove() 
@@ -234,13 +255,13 @@ public class GameManager : MonoBehaviour
 
     private void HandleMistake(int choice, int correct) 
     {
-        string[] choices = {"Hit", "Stand", "Double", "Split", "Insurance"};
+        /*string[] choices = {"Hit", "Stand", "Double", "Split", "Insurance"};
         if (!deviations)
         {
             Debug.Log("Basic Strategy Mistake: You chose: " + choices[choice] + ", but the correct move was: " + choices[correct]); // Maybe use on-screen text instead of debug log
         } else {  
             Debug.Log("Strategy Mistake: You chose: " + choices[choice] + ", but the correct move was: " + choices[correct]); // NEEDS TO CHANGE, OK FOR NOW
-        }
+        }*/
     }
 	
 	public class PlayerHelper
@@ -259,18 +280,6 @@ public class GameManager : MonoBehaviour
 		
 		public void addPlayer(PlayerScript player){
 			this.next = new PlayerHelper(player, this);
-		}
-		
-		public PlayerHelper getNext(){
-			return this.next;
-		}
-		
-		public PlayerHelper getPrev(){
-			return this.previous;
-		}
-		
-		public PlayerScript getData(){
-			return this.data;
 		}
 	}
 }

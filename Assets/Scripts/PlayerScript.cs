@@ -13,7 +13,13 @@ public class PlayerScript : MonoBehaviour
     // Total value of player/dealer's hand
     public int handValue = 0;
     public bool softCount = false;
+	
+	
 	public int bet = 0;
+	public int offset = 0;
+	
+	//is player a split instance
+	public bool split = false;
 	
     // Array of card objects on table
     private GameObject[] hand = new GameObject[10];
@@ -37,18 +43,11 @@ public class PlayerScript : MonoBehaviour
         // Get a card, use deal card to assign sprite and value to card on table
         // GameObject temp = Instantiate(startCard, new Vector3(cardIndex * 20f, cardIndex * 20f, 0), Quaternion.identity);
         int cardValue;
-        if (cardIndex == 0)
-        {
-            cardValue = deckScript.DealCard(startCard.GetComponent<CardScript>());
-            hand[0] = startCard;
-        }
-        else
-        {
-            GameObject temp = Instantiate(startCard);
-            temp.transform.Translate(new Vector3(cardIndex * 0.5f, cardIndex * dir * 0.5f-1.05f, 0));
-            hand[cardIndex] = temp;
-            cardValue = deckScript.DealCard(hand[cardIndex].GetComponent<CardScript>());
-        }
+        GameObject temp = Instantiate(startCard);
+        temp.transform.Translate(new Vector3(offset*1f + cardIndex * 0.5f, cardIndex * dir * 0.5f-1.05f, 0));
+        hand[cardIndex] = temp;
+        cardValue = deckScript.DealCard(hand[cardIndex].GetComponent<CardScript>());
+		
         // Show card on game screen
         hand[cardIndex].GetComponent<Renderer>().enabled = true;
         // Add card value to running total of the hand
