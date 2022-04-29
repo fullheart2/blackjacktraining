@@ -33,6 +33,8 @@ public class GameManager : MonoBehaviour
 	public Text betText;
     public Text standBtnText;
 	public Text arrow;
+	public Text trueCountText;
+	public Text runningCountText;
 	
 
     // Card hiding dealer's 2nd card
@@ -66,7 +68,11 @@ public class GameManager : MonoBehaviour
         decks = settings[1];
         players = settings[2];
         if (settings[3] == 0) deviations = false; else deviations = true;
-        if (settings[3] == 0) hit17 = false; else hit17 = true;
+        if (settings[4] == 0) hit17 = false; else hit17 = true;
+		if (settings[5] == 0){
+			trueCountText.gameObject.SetActive(false); 
+			runningCountText.gameObject.SetActive(false);
+		}	
         hitBtn.gameObject.SetActive(false);
         standBtn.gameObject.SetActive(false);
         doubleBtn.gameObject.SetActive(false);
