@@ -30,6 +30,7 @@ public class DeckScript : MonoBehaviour
             {
                 num = 10;
             }
+
             cardValues[i] = num++;
             cardMapping[i] = i;
         }

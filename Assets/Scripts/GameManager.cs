@@ -199,8 +199,6 @@ public class GameManager : MonoBehaviour
 
 	private void SplitClicked()//need to add checking if number of cards in hand is two and if cards are the same
 	{
-		Debug.Log("Split clicked");
-
 		PlayerScript temp = new PlayerScript(deckScript, playerStartCard);
 		temp.bet = round_base_bet;
 		temp.offset = ++offset;
@@ -373,12 +371,13 @@ public class GameManager : MonoBehaviour
     private void HandleMistake(int choice, int correct) 
     {
         string[] choices = {"Hit", "Stand", "Double", "Split", "Surrender"};
-        //if (!deviations)
-        //{
-            Debug.Log("Basic Strategy Mistake: You chose: " + choices[choice] + ", but the correct move was: " + choices[correct]); // Maybe use on-screen text instead of debug log
-			alertText.text = "Basic Strategy Mistake: \nYou chose: " + choices[choice] + ", \nbut the correct move was: " + choices[correct];
-			ShowText(alertText);
-			Debug.Log("Player had: " + playerList.data.handValue + " Dealer had: " + dealerScript.hand[1].GetComponent<CardScript>().GetValueOfCard() + " Soft Count: " + playerList.data.softCount) ;
+		//if (!deviations)
+		//{
+		Debug.Log("Player had: " + playerList.data.handValue + " Dealer had: " + dealerScript.hand[1].GetComponent<CardScript>().GetValueOfCard() + " Soft Count: " + playerList.data.softCount);
+		Debug.Log("Basic Strategy Mistake: You chose: " + choices[choice] + ", but the correct move was: " + choices[correct]); // Maybe use on-screen text instead of debug log
+		alertText.text = "Basic Strategy Mistake: \nYou chose: " + choices[choice] + ", \nbut the correct move was: " + choices[correct];
+		ShowText(alertText);
+			
 		//} else {  
             //Debug.Log("Strategy Mistake: You chose: " + choices[choice] + ", but the correct move was: " + choices[correct]); // NEEDS TO CHANGE, OK FOR NOW
         //}
@@ -533,6 +532,7 @@ public class GameManager : MonoBehaviour
 		public void ResetCard() 
 		{
 			handValue -= (hand[1].GetComponent<CardScript>()).GetValueOfCard();
+			if (handValue == 1) handValue += 10;
 			if (hand[1] != null)
 			{
 				hand[1] = null;
