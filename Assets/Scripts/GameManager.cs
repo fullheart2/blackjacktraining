@@ -120,7 +120,7 @@ public class GameManager : MonoBehaviour
         hitBtn.gameObject.SetActive(true);
         standBtn.gameObject.SetActive(true);
         doubleBtn.gameObject.SetActive(true);
-		if (playerList.data.hand[0].GetComponent<CardScript>().GetValueOfCard() == playerList.data.hand[1].GetComponent<CardScript>().GetValueOfCard()) splitBtn.gameObject.SetActive(true);
+		if (SplitCheck(playerList.data)) splitBtn.gameObject.SetActive(true);
         surrenderBtn.gameObject.SetActive(true);
 		arrow.gameObject.SetActive(true);
 		surr = false;
@@ -136,7 +136,7 @@ public class GameManager : MonoBehaviour
 
     private void PlayerAction(int choice) 
     {
-        int correct = GetCorrectMove();
+        int correct = GetCorrectMove(playerList.data, dealerScript.hand[1].GetComponent<CardScript>().GetValueOfCard());
         if (correct != choice) HandleMistake(choice, correct);
         switch(choice) 
         {
@@ -180,7 +180,7 @@ public class GameManager : MonoBehaviour
 		else{
 			playerList = playerList.next;
 			doubleBtn.gameObject.SetActive(true);
-			if (playerList.data.hand[0].GetComponent<CardScript>().GetValueOfCard() == playerList.data.hand[1].GetComponent<CardScript>().GetValueOfCard()) splitBtn.gameObject.SetActive(true);
+			if (!SplitCheck(playerList.data)) splitBtn.gameObject.SetActive(true);
 			arrow.transform.Translate(2, 0, 0);
 		}
     }
@@ -198,7 +198,7 @@ public class GameManager : MonoBehaviour
 		playerList.addPlayer(temp);
 		playerList.data.GetCard();
 		scoreText.text = "Hand: " + playerList.data.handValue.ToString();
-		if (playerList.data.hand[0].GetComponent<CardScript>().GetValueOfCard() != playerList.data.hand[1].GetComponent<CardScript>().GetValueOfCard()) splitBtn.gameObject.SetActive(false);
+		if (SplitCheck(playerList.data)) splitBtn.gameObject.SetActive(false);
 		surrenderBtn.gameObject.SetActive(false);
 	}
 
@@ -298,20 +298,70 @@ public class GameManager : MonoBehaviour
 		betText.text = "Base Bet: $" + round_base_bet.ToString();
     }
 
-    private int GetCorrectMove() 
+	private bool SplitCheck(PlayerScript player) 
+	{
+		if (player.hand[0].GetComponent<CardScript>().GetValueOfCard() == player.hand[1].GetComponent<CardScript>().GetValueOfCard()) 
+			return true;
+		if (player.hand[0].GetComponent<CardScript>().GetValueOfCard() == 1 && player.hand[1].GetComponent<CardScript>().GetValueOfCard() == 11)
+			return true;
+		if (player.hand[1].GetComponent<CardScript>().GetValueOfCard() == 1 && player.hand[0].GetComponent<CardScript>().GetValueOfCard() == 11)
+			return true;
+		return false;
+	}
+
+    private int GetCorrectMove(PlayerScript player, int dealer) 
     {
-        return 0;
+		if (dealer == 1) dealer = 11;
+		bool legalsur = surrenderBtn.gameObject.activeSelf;
+		bool legaldouble = doubleBtn.gameObject.activeSelf;
+		if (splitBtn.gameObject.activeSelf)
+		{
+			if (player.handValue == 16 && dealer == 11 && hit17 && legalsur) return 4;
+			if (player.handValue == 12 || player.handValue == 16) return 3;
+			if (player.handValue == 18) { if (dealer != 7 || dealer > 9) return 3; else return 1; }
+			if (player.handValue == 14) { if (dealer > 7) return 0; else return 3; }
+			if (player.handValue == 12) { if (dealer > 6) return 0; else return 3; }
+			if (player.handValue == 4) { if (dealer > 7) return 0; else return 3; }
+			if (player.handValue == 6) { if (dealer > 7) return 0; else return 3; }
+			if (player.handValue == 8) { if (dealer > 6 || dealer < 5) return 0; else return 3; }
+		}
+		if (!player.softCount) 
+		{
+			if (player.handValue > 17) return 1;
+			if (player.handValue == 17) if (dealer == 11 && hit17 && legalsur) return 4; else return 1;
+			if (player.handValue == 16) { if (dealer > 8 && legalsur) return 4; if (dealer > 6) return 0; else return 1; }
+			if (player.handValue == 15) { if (dealer == 10 && legalsur) return 4; if (dealer == 11 && hit17 && legalsur) return 4; if (dealer > 6) return 0; else return 1; }
+			if (player.handValue == 14 || player.handValue == 13) { if (dealer > 6) return 0; else return 1; }
+			if (player.handValue == 12) { if (dealer > 6 || dealer < 4) return 0; else return 1; }
+			if (player.handValue == 11) { if (dealer > 10 && !hit17 || !legaldouble) return 0; else return 2; }
+			if (player.handValue == 10) { if (dealer > 9 || !legaldouble) return 0; else return 2; }
+			if (player.handValue == 9) { if (dealer > 6 || dealer < 3 || !legaldouble) return 0; else return 2; }
+			if (player.handValue < 8) return 0;
+		}
+		if (player.softCount)
+		{
+			if (player.handValue > 19) return 1;
+			if (player.handValue == 19) { if (dealer == 6 && hit17 && legaldouble) return 2; else return 1; }
+				if (player.handValue == 18) { if (dealer > 8) return 0; if (dealer > 6 || (dealer == 2 && !hit17) || !legaldouble) return 1; else return 2; }
+				if (player.handValue == 17) { if (dealer > 6 || dealer < 3 || !legaldouble) return 0; else return 2; }
+				if (player.handValue == 16) { if (dealer > 6 || dealer < 4 || !legaldouble) return 0; else return 2; }
+				if (player.handValue == 15) { if (dealer > 6 || dealer < 4 || !legaldouble) return 0; else return 2; }
+				if (player.handValue == 14) { if (dealer > 6 || dealer < 5 || !legaldouble) return 0; else return 2; }
+				if (player.handValue == 13) { if (dealer > 6 || dealer < 5 || !legaldouble) return 0; else return 2; }
+		}
+		return -1;
     }
 
     private void HandleMistake(int choice, int correct) 
     {
-        /*string[] choices = {"Hit", "Stand", "Double", "Split", "Surrender"};
+        string[] choices = {"Hit", "Stand", "Double", "Split", "Surrender"};
         if (!deviations)
         {
             Debug.Log("Basic Strategy Mistake: You chose: " + choices[choice] + ", but the correct move was: " + choices[correct]); // Maybe use on-screen text instead of debug log
-        } else {  
+			Debug.Log("Player had: " + playerList.data.handValue + " Dealer had: " + dealerScript.hand[1].GetComponent<CardScript>().GetValueOfCard() + " Soft Count: " + playerList.data.softCount) ;
+		} else {  
             Debug.Log("Strategy Mistake: You chose: " + choices[choice] + ", but the correct move was: " + choices[correct]); // NEEDS TO CHANGE, OK FOR NOW
-        }*/
+        }
     }
 	
 	
@@ -485,6 +535,7 @@ public class GameManager : MonoBehaviour
 			cardIndex = 0;
 			handValue = 0;
 			aceList = new List<CardScript>();
+			softCount = false;
 		}
 	}
 }
