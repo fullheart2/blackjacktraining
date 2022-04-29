@@ -35,7 +35,7 @@ public class GameManager : MonoBehaviour
 	public Text arrow;
 	public Text alertText;
 
-	float duration = 3f;
+	float duration = 5f;
 	float endTime;
 
 
