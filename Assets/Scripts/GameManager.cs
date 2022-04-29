@@ -192,7 +192,7 @@ public class GameManager : MonoBehaviour
 		else {
 			playerList = playerList.next;
 			doubleBtn.gameObject.SetActive(true);
-			if (!SplitCheck(playerList.data)) splitBtn.gameObject.SetActive(true);
+			if (SplitCheck(playerList.data)) splitBtn.gameObject.SetActive(true);
 			arrow.transform.Translate(2, 0, 0);
 		}
 	}
@@ -210,7 +210,7 @@ public class GameManager : MonoBehaviour
 		playerList.addPlayer(temp);
 		playerList.data.GetCard();
 		scoreText.text = "Hand: " + playerList.data.handValue.ToString();
-		if (SplitCheck(playerList.data)) splitBtn.gameObject.SetActive(false);
+		if (!SplitCheck(playerList.data)) splitBtn.gameObject.SetActive(false);
 		surrenderBtn.gameObject.SetActive(false);
 	}
 
