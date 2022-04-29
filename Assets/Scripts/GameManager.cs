@@ -13,12 +13,11 @@ public class GameManager : MonoBehaviour
     public Button standBtn;
     public Button doubleBtn;
     public Button splitBtn;
-	public Button insuranceBtn;
+	public Button surrenderBtn;
     public Button betBtn;
 	
 	
 	//Game Objects
-	public CardScript cardScript;   
 	public DeckScript deckScript;
 
     //Dealer script
@@ -32,8 +31,8 @@ public class GameManager : MonoBehaviour
     public Text dealerScoreText;
     public Text cashText;
 	public Text betText;
-    public Text mainText;
     public Text standBtnText;
+	public Text arrow;
 	
 
     // Card hiding dealer's 2nd card
@@ -42,6 +41,8 @@ public class GameManager : MonoBehaviour
 	public GameObject dealerStartCard;
     private int bank = 0;
 	int round_base_bet = 0;
+	private int offset = 0;
+	private bool surr = false;
 
     private int[] settings;
     private bool countMode;
@@ -58,7 +59,7 @@ public class GameManager : MonoBehaviour
         standBtn.onClick.AddListener(() => PlayerAction(1));
         doubleBtn.onClick.AddListener(() => PlayerAction(2));
         splitBtn.onClick.AddListener(() => PlayerAction(3));
-        insuranceBtn.onClick.AddListener(() => PlayerAction(4));
+		surrenderBtn.onClick.AddListener(() => PlayerAction(4));
         betBtn.onClick.AddListener(() => BetClicked());
         settings = SettingsManager.GetSettings();
         if (settings[0] == 0) countMode = false; else countMode = true;
@@ -70,26 +71,44 @@ public class GameManager : MonoBehaviour
         standBtn.gameObject.SetActive(false);
         doubleBtn.gameObject.SetActive(false);
         splitBtn.gameObject.SetActive(false);
-        insuranceBtn.gameObject.SetActive(false);
-        hideCard.GetComponent<Renderer>().sortingOrder = 999;
+        surrenderBtn.gameObject.SetActive(false);
+		arrow.gameObject.SetActive(false);
+		hideCard.GetComponent<Renderer>().sortingOrder = 999;
         deckScript.SetDecks(decks);
         deckScript.GetCardValues();
-		playerList = new PlayerHelper(new PlayerScript(cardScript, deckScript, playerStartCard));
-		dealerScript = new PlayerScript(cardScript, deckScript, dealerStartCard, 0); 
+		playerList = new PlayerHelper(new PlayerScript(deckScript, playerStartCard));
+		dealerScript = new PlayerScript(deckScript, dealerStartCard, 0); 
     }
 
     private void DealClicked()
     {
-        // Reset round, hide text, prep for new hand
-        playerList.data.ResetHand();
-        dealerScript.ResetHand();
+		// Reset round, hide text, prep for new hand
+		while (true) {
+			if (playerList.next == null)
+			{
+				break;
+			} playerList = playerList.next;
+		}
+		while (true) {
+			playerList.next = null;
+			
+			if (playerList.previous == null) {
+				break;
+			}
+			else
+			{
+				playerList.data.ResetHand();
+				offset--;
+				playerList = playerList.previous;
+			}
+		}
+		playerList.data.ResetHand();
+		dealerScript.ResetHand();
         // Hide deal hand score at start of deal
-        dealerScoreText.gameObject.SetActive(false);
-        mainText.gameObject.SetActive(false);
-        dealerScoreText.gameObject.SetActive(false);
+        // dealerScoreText.gameObject.SetActive(false);
         GameObject.Find("Deck").GetComponent<DeckScript>().Shuffle();
-        playerList.data.StartHand();
-        dealerScript.StartHand();
+		dealerScript.StartHand();
+		playerList.data.StartHand();
         // Update the scores displayed
         scoreText.text = "Hand: " + playerList.data.handValue.ToString();
         dealerScoreText.text = "Hand: " + dealerScript.handValue.ToString();
@@ -101,9 +120,11 @@ public class GameManager : MonoBehaviour
         hitBtn.gameObject.SetActive(true);
         standBtn.gameObject.SetActive(true);
         doubleBtn.gameObject.SetActive(true);
-        splitBtn.gameObject.SetActive(true);
-        insuranceBtn.gameObject.SetActive(true);
-		
+		if (playerList.data.hand[0].GetComponent<CardScript>().GetValueOfCard() == playerList.data.hand[1].GetComponent<CardScript>().GetValueOfCard()) splitBtn.gameObject.SetActive(true);
+        surrenderBtn.gameObject.SetActive(true);
+		arrow.gameObject.SetActive(true);
+		surr = false;
+
 		//sam added this line
 		playerList.data.bet = round_base_bet;
 		
@@ -120,30 +141,34 @@ public class GameManager : MonoBehaviour
         switch(choice) 
         {
             case 0: // Hit
-                HitClicked();
+                HitClicked(false);
                 break;
             case 1: // Stand
                 StandClicked();
                 break;
             case 2: // Double
                 playerList.data.bet = playerList.data.bet *2;
-                HitClicked();
+                HitClicked(true);
                 StandClicked();
                 break;
             case 3: // Split
 				SplitClicked();
                 break;
-            case 4: // Insurance
-
+            case 4: // Surrender
+				surr = true;
+				StandClicked();
                 break;
         }
     } 
 
-    private void HitClicked()
+    private void HitClicked(bool doub)
     {
-        playerList.data.GetCard();
+		doubleBtn.gameObject.SetActive(false);
+		splitBtn.gameObject.SetActive(false);
+		surrenderBtn.gameObject.SetActive(false);
+		playerList.data.GetCard();
         scoreText.text = "Hand: " + playerList.data.handValue.ToString();
-        if (playerList.data.handValue > 20) StandClicked();
+        if (playerList.data.handValue > 21 && !doub) StandClicked();
     }
 
     private void StandClicked()
@@ -154,18 +179,30 @@ public class GameManager : MonoBehaviour
 		}
 		else{
 			playerList = playerList.next;
+			doubleBtn.gameObject.SetActive(true);
+			if (playerList.data.hand[0].GetComponent<CardScript>().GetValueOfCard() == playerList.data.hand[1].GetComponent<CardScript>().GetValueOfCard()) splitBtn.gameObject.SetActive(true);
+			arrow.transform.Translate(2, 0, 0);
 		}
     }
 	
 	private void SplitClicked()//need to add checking if number of cards in hand is two and if cards are the same
 	{
-		PlayerScript temp = new PlayerScript(cardScript, deckScript, playerStartCard);
+		Debug.Log("Split clicked");
+		
+		PlayerScript temp = new PlayerScript(deckScript, playerStartCard);
 		temp.bet = round_base_bet;
-		temp.offset = playerList.data.offset +1;
+		temp.offset = ++offset;
+		temp.GetLastSplitCard(playerList.data, offset-playerList.data.offset);
+		playerList.data.ResetCard();
+		temp.GetCard();
 		playerList.addPlayer(temp);
+		playerList.data.GetCard();
+		scoreText.text = "Hand: " + playerList.data.handValue.ToString();
+		if (playerList.data.hand[0].GetComponent<CardScript>().GetValueOfCard() != playerList.data.hand[1].GetComponent<CardScript>().GetValueOfCard()) splitBtn.gameObject.SetActive(false);
+		surrenderBtn.gameObject.SetActive(false);
 	}
 
-    private void HitDealer()
+	private void HitDealer()
     {
         while (dealerScript.handValue < 17 || (dealerScript.handValue == 17 && dealerScript.softCount && hit17))
         {
@@ -182,48 +219,53 @@ public class GameManager : MonoBehaviour
 		// Booleans (true/false) for bust and blackjack/21
 		bool dealerBust = dealerScript.handValue > 21;
 		bool dealer21 = dealerScript.handValue == 21;
-		
-		
-		while(true){
-			// Booleans (true/false) for bust and blackjack/21
-			bool playerBust = playerList.data.handValue > 21;
-			bool player21 = playerList.data.handValue == 21;
-			// if player busts, dealer wins
-			if (playerBust || (dealerScript.handValue > playerList.data.handValue && !dealerBust))
-			{
-				mainText.text = "Dealer wins!";
-				bank -= playerList.data.bet;
-			}
-			// if dealer busts, player didnt, or player has more points, player wins
-			else if (dealerBust || playerList.data.handValue > dealerScript.handValue)
-			{
-				mainText.text = "You win!";
-				bank += playerList.data.bet;
-			}
-			//Check for tie, return bets
-			else if (playerList.data.handValue == dealerScript.handValue)
-			{
-				mainText.text = "Push: Bets returned";
-			}
-			else
-			{
-				//error occured
-				Debug.Log(dealerBust);
-				Debug.Log(playerBust);
-				Debug.Log(playerList.data.handValue);
-				Debug.Log(dealerScript.handValue);
-				System.Environment.Exit(1);
-			}
-			if(playerList.previous == null){
-				break;
-			}
-			else{
-				playerList = playerList.previous;
-				playerList.next = null;
+
+
+		if (surr)
+		{
+			bank -= playerList.data.bet / 2;
+		}
+		else {
+			while (true) {
+				// Booleans (true/false) for bust and blackjack/21
+				bool playerBust = playerList.data.handValue > 21;
+				bool player21 = playerList.data.handValue == 21;
+				// if player busts, dealer wins
+				if (playerBust || (dealerScript.handValue > playerList.data.handValue && !dealerBust))
+				{
+					bank -= playerList.data.bet;
+				}
+				// if dealer busts, player didnt, or player has more points, player wins
+				else if (dealerBust || playerList.data.handValue > dealerScript.handValue)
+				{
+					if (player21 && playerList.data.hand[2] == null) bank += playerList.data.bet / 2;
+					bank += playerList.data.bet;
+				}
+				//Check for tie, return bets
+				else if (playerList.data.handValue == dealerScript.handValue)
+				{
+					if (player21 && playerList.data.hand[2] == null)
+					{
+						bank += playerList.data.bet / 2;
+					}
+				}
+				else
+				{
+					//error occured
+					Debug.Log(dealerBust);
+					Debug.Log(playerBust);
+					Debug.Log(playerList.data.handValue);
+					Debug.Log(dealerScript.handValue);
+					System.Environment.Exit(1);
+				}
+				if (playerList.previous == null) {
+					break;
+				}
+				else {
+					playerList = playerList.previous;
+				}
 			}
 		}
-
-		
         // Set ui up for next move / hand / turn
         if (roundOver)
         {
@@ -231,12 +273,14 @@ public class GameManager : MonoBehaviour
             standBtn.gameObject.SetActive(false);
             doubleBtn.gameObject.SetActive(false);
             splitBtn.gameObject.SetActive(false);
-            insuranceBtn.gameObject.SetActive(false);
+			surrenderBtn.gameObject.SetActive(false);
             dealBtn.gameObject.SetActive(true);
 			betBtn.gameObject.SetActive(true);
-            mainText.gameObject.SetActive(true);
-            dealerScoreText.gameObject.SetActive(true);
+            // dealerScoreText.gameObject.SetActive(true);
             hideCard.GetComponent<Renderer>().enabled = false;
+			arrow.transform.Translate(-2*offset, 0, 0);
+			arrow.gameObject.SetActive(false);
+
 			round_base_bet = 0;
 			betText.text = "Base Bet: $" + round_base_bet.ToString();
             cashText.text = "Bank: $" + bank.ToString();
@@ -261,7 +305,7 @@ public class GameManager : MonoBehaviour
 
     private void HandleMistake(int choice, int correct) 
     {
-        /*string[] choices = {"Hit", "Stand", "Double", "Split", "Insurance"};
+        /*string[] choices = {"Hit", "Stand", "Double", "Split", "Surrender"};
         if (!deviations)
         {
             Debug.Log("Basic Strategy Mistake: You chose: " + choices[choice] + ", but the correct move was: " + choices[correct]); // Maybe use on-screen text instead of debug log
@@ -287,12 +331,16 @@ public class GameManager : MonoBehaviour
 			this.previous = prev;
 			this.data = data;
 		}
-		
-		public void addPlayer(PlayerScript player){
-			this.next = new PlayerHelper(player, this);
+
+		public void addPlayer(PlayerScript player) {
+			PlayerHelper curr = this;
+			while (curr.next != null) {
+				curr = curr.next;
+			}
+			curr.next = new PlayerHelper(player, curr);
 		}
 	}
-	
+
 	
 	
 	
@@ -301,7 +349,6 @@ public class GameManager : MonoBehaviour
 		// --- This script is for BOTH player and dealer
 
 		// Get other scripts
-		public CardScript cardScript;   
 		public DeckScript deckScript;
 
 		// Total value of player/dealer's hand
@@ -316,7 +363,7 @@ public class GameManager : MonoBehaviour
 		public bool split = false;
 		
 		// Array of card objects on table
-		private GameObject[] hand = new GameObject[10];
+		public GameObject[] hand = new GameObject[10];
 		public GameObject startCard;
 		public int dir;
 
@@ -325,8 +372,7 @@ public class GameManager : MonoBehaviour
 		// Tracking aces for 1 to 11 conversions
 		List<CardScript> aceList = new List<CardScript>();
 		
-		public PlayerScript(CardScript card, DeckScript deck, GameObject c, int d = 1){
-			this.cardScript = card;
+		public PlayerScript(DeckScript deck, GameObject c, int d = 1){
 			this.deckScript = deck;
 			this.startCard = c;
 			this.dir = d;
@@ -346,7 +392,7 @@ public class GameManager : MonoBehaviour
 			// GameObject temp = Instantiate(startCard, new Vector3(cardIndex * 20f, cardIndex * 20f, 0), Quaternion.identity);
 			int cardValue;
 			GameObject temp = Instantiate(startCard);
-			temp.transform.Translate(new Vector3(offset*1f + cardIndex * 0.5f, cardIndex * dir * 0.5f-1.05f, 0));
+			temp.transform.Translate(new Vector3(offset*2f + cardIndex * 0.5f, cardIndex * dir * 0.5f, 0));
 			hand[cardIndex] = temp;
 			cardValue = deckScript.DealCard(hand[cardIndex].GetComponent<CardScript>());
 			
@@ -356,6 +402,32 @@ public class GameManager : MonoBehaviour
 			handValue += cardValue;
 			// If value is 1, it is an ace
 			if(cardValue == 1)
+			{
+				aceList.Add(hand[cardIndex].GetComponent<CardScript>());
+			}
+			// Check if we should use an 11 instead of a 1
+			AceCheck();
+			cardIndex++;
+			return handValue;
+		}
+
+		public int GetLastSplitCard(PlayerScript splitter, int localoffset)
+		{
+			// Get a card, use deal card to assign sprite and value to card on table
+			// GameObject temp = Instantiate(startCard, new Vector3(cardIndex * 20f, cardIndex * 20f, 0), Quaternion.identity);
+			int cardValue;
+			GameObject temp = splitter.hand[1];
+			temp.transform.Translate(new Vector3(localoffset * 2f - 0.5f, -1 * dir * 0.5f, 0));
+			hand[cardIndex] = temp;
+			cardValue = temp.GetComponent<CardScript>().GetValueOfCard();
+
+			// Show card on game screen
+			hand[cardIndex].GetComponent<Renderer>().enabled = true;
+
+			// Add card value to running total of the hand
+			handValue += cardValue;
+			// If value is 1, it is an ace
+			if (cardValue == 1)
 			{
 				aceList.Add(hand[cardIndex].GetComponent<CardScript>());
 			}
@@ -387,6 +459,17 @@ public class GameManager : MonoBehaviour
 			}
 		}
 
+		// Remove 2nd card for a split
+		public void ResetCard() 
+		{
+			handValue -= (hand[1].GetComponent<CardScript>()).GetValueOfCard();
+			if (hand[1] != null)
+			{
+				hand[1] = null;
+			}
+			cardIndex = 1;
+		}
+
 		// Hides all cards, resets the needed variables
 		public void ResetHand()
 		{
@@ -396,6 +479,7 @@ public class GameManager : MonoBehaviour
 				{
 					hand[i].GetComponent<CardScript>().ResetCard();
 					hand[i].GetComponent<Renderer>().enabled = false;
+					hand[i] = null;
 				}
 			}
 			cardIndex = 0;

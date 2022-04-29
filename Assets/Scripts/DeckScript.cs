@@ -8,7 +8,7 @@ public class DeckScript : MonoBehaviour
     public Sprite[] cardSprites;
     int[] cardMapping;
     int[] cardValues;
-    int currentIndex = 0;
+    public int currentIndex = 0;
 
     void Start()
     {

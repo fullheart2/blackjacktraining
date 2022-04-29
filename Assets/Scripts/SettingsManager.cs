@@ -18,7 +18,6 @@ public class SettingsManager : MonoBehaviour
     public Dropdown players;
     public Toggle deviations;
     public Toggle hit17;
-	//mike sucks eggs
 
 
     // Start is called before the first frame update
